@@ -122,6 +122,33 @@
                 </div>
         </div>
    </div>
+
+   <div class="container">
+
+    
+    <table class="table table-striped table-bordered">
+      <tr>
+       <th>ID</th>
+       <th>Product ID</th>
+       <th>Seller ID</th>
+       <th>Unit Price</th>
+       <th>Quantity</th>
+     </tr>
+     <% if (seller_data.length) { %>      
+       <% for(var i=0; i < seller_data.length; i++) { %>
+       <tr>
+         <td><%= seller_data[i].id %></td>
+         <td><%= seller_data[i].userId %></td>
+         <td><%= seller_data[i].productId %></td>
+         <td><%= seller_data[i].unitPrice %></td>
+         <td><%= seller_data[i].quantity %></td>
+       </tr>
+    <% } %>
+ 
+  <% } %>
+ 
+ </table>
+ </div>
  </body>
 </html>
 <script src="/javascripts/bootstrap.js"></script>

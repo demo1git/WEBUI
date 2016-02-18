@@ -1,12 +1,5 @@
 var mysql = require('mysql');
-//var Client = require('node-rest-client').Client;
-//var client = new Client();
-var requestify = require('requestify');
-//var unirest = require('unirest');
-
-//var querystring = require('querystring');
-//var http = require('http');
-
+var request = require('request');
 var async = require('async');
 
 function REST_ROUTER(router,connection,md5) {
@@ -76,49 +69,42 @@ REST_ROUTER.prototype.handleRoutes= function(router,connection,md5) {
        res.render('register');
     });
 
-    router.get("/buyer",function(req,res){
-      
-      async.parallel(
-            [
-                function(callback) {
-                    self.getProduct(router,connection,md5, callback);
-                },
-                function(callback) {
-                    self.getBuyer(router,connection,md5, callback);
-                }
-            ], 
+    router.get("/buyer",function(req,res){   
+
+      async.parallel([
+            function(callback) {
+                self.getProduct(router,connection,md5, callback);
+            },
+            function(callback) {
+                self.getBuyer(router,connection,md5, callback);
+            }], 
             function(err, results) {
                 res.render('buyer', { product: results[0], buyer: results[1]});
             }
         );
-           /* self.getProduct(router,connection,md5, function(err, product){
-            self.getBuyer(router,connection,md5,res,  function(err,buyer){
-              res.render('buyer', { product: product, buyer: buyer});
-           });
-        });*/
     });
 
     router.get("/seller",function(req,res){
-        
-         async.parallel(
-            [
+        var seller_data = [];   
+        //Calling inventory service to fetch the data
+        request({
+           uri: "http://localhost:3001/seller",
+           method: "GET"          
+         }, function(error, response, body) {
+             seller_data = JSON.parse(body);
+             async.parallel([
                 function(callback) {
                     self.getProduct(router,connection,md5, callback);
                 },
                 function(callback) {
                     self.getSeller(router,connection,md5, callback);
+                }], 
+                function(err, results) {
+                    res.render('seller', { product: results[0], seller: results[1] , seller_data: seller_data});
                 }
-            ], 
-            function(err, results) {
-                res.render('seller', { product: results[0], seller: results[1]});
-            }
-        );
+            );
+        });
 
-        /*self.getProduct(router,connection,md5, function(err,product){
-            self.getSeller(router,connection,md5,res,  function(err,seller){
-              res.render('seller', { product: product, seller: seller});
-           });
-        });*/
     });
 
     router.get("/product",function(req,res){
@@ -134,21 +120,39 @@ REST_ROUTER.prototype.handleRoutes= function(router,connection,md5) {
         query = mysql.format(query,table);
         connection.query(query,function(err,rows){
             if(err) {
-                res.json({"Error" : true, "Message" : "Error executing MySQL query"});
+                res.json({"Error" : true, "Message" : err});
             } else {
                 if(type=="S"){
-                    self.getProduct(router,connection,md5, function(err, product){
-                        self.getSeller(router,connection,md5,res,  function(err, seller){
-                          res.render('seller', { product: product, seller: seller});
-                       });
-                    });
+                    async.parallel([
+                        function(callback) {
+                            self.getProduct(router,connection,md5, callback);
+                        },
+                        function(callback) {
+                            self.getSeller(router,connection,md5, callback);
+                        }], 
+                        function(err, results) {
+                            res.render('seller', { product: results[0], seller: results[1]});
+                        }
+                    );
                 }
                 else{
-                   self.getProduct(router,connection,md5, function(err, product){
+                  /* self.getProduct(router,connection,md5, function(err, product){
                         self.getBuyer(router,connection,md5,res,  function(err, buyer){
                           res.render('buyer', { product: product, buyer: buyer});
                        });
-                    });
+                    });*/
+
+                async.parallel([
+                            function(callback) {
+                                self.getProduct(router,connection,md5, callback);
+                            },
+                            function(callback) {
+                                self.getBuyer(router,connection,md5, callback);
+                            }], 
+                            function(err, results) {
+                                res.render('buyer', { product: results[0], buyer: results[1]});
+                            }
+                    );
                 }
             }
         });
@@ -170,70 +174,19 @@ REST_ROUTER.prototype.handleRoutes= function(router,connection,md5) {
     });
 
     router.post("/seller",function(req,res){
-        /*  var args = {
-            data: { userId: req.body.seller, productId: req.body.product, unitPrice: req.body.price, quantity: req.body.quantity },
-            headers: { "Content-Type": "application/json" }
-        };
-         
-        client.post("http://localhost:3001/create", args, function (data, response) {
-            // parsed response body as js object 
-            console.log(data);
-            // raw response 
-            console.log(response);
-        });*/
-
-
-        //request.post('http://localhost:3001/create', {form:{ userId: req.body.seller, productId: req.body.product, unitPrice: req.body.price, quantity: req.body.quantity }});
-  
-        /*request.post(
-            'http://localhost:3001/create',
-            {form: { userId: req.body.seller, productId: req.body.product, unitPrice: req.body.price, quantity: req.body.quantity }},
-            function (error, response, body) {
-                if (!error && response.statusCode == 200) {
-                    console.log(body)
-                }
-            }
-        );
-*/
-        /*unirest.post('http://localhost:3001/create')
-            .header('Accept', 'application/json')
-            .send({ userId: req.body.seller, productId: req.body.product, unitPrice: req.body.price, quantity: req.body.quantity })
-            .end(function (response) {
-              console.log(response.body);
-            });*/
-
-        /*var options = {
-          host: http://localhost:3001/create,
-          port: 3001,
-          path: '/resource?id=foo&bar=baz',
-          method: 'POST'
-        };
-
-        http.request(options, function(res) {
-          console.log('STATUS: ' + res.statusCode);
-          console.log('HEADERS: ' + JSON.stringify(res.headers));
-          res.setEncoding('utf8');
-          res.on('data', function (chunk) {
-            console.log('BODY: ' + chunk);
-          });
-        }).end();*/
-
-
-requestify.post('http://localhost:3001/create', {
-        userId: req.body.seller, 
-        productId: req.body.product, 
-        unitPrice: req.body.price, 
-        quantity: req.body.quantity
-    })
-    .then(function(response) {
-        // Get the response body (JSON parsed or jQuery object for XMLs)
-        //response.getBody();
-
-        // Get the raw response body
-        //response.body;
-        console.log("success");
-    });
+        //Calling inventory service to insert data
+        request({
+           headers: {
+              'Content-Type': 'application/json'
+            },
+           uri: "http://localhost:3001/seller/create",
+           method: "POST",
+           form:{
+               "userId": req.body.seller, "productId": req.body.product, "unitPrice": req.body.price, "quantity": req.body.quantity 
+           }
+         }, function(error, response, body) {
+            res.redirect('/api/seller');
+        });
     });
 }
-
 module.exports = REST_ROUTER;
