@@ -59,4 +59,6 @@ REST.prototype.stop = function(err) {
     process.exit(1);
 }
 //console.log("changes in server.js");
+
+//add new functions
 new REST();
